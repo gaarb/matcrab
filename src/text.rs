@@ -60,9 +60,9 @@ pub fn em_size(font_size: f32) -> f32 {
 
 
 // Take an input string and split it into lines given a max allowable line width
-pub fn string_to_lines<T: Into<String>>(text: T, font_size_and_max_width: Option<(f32, f32)>) -> Vec<String> {
+pub fn string_to_lines<T: AsRef<str>>(text: T, font_size_and_max_width: Option<(f32, f32)>) -> Vec<String> {
     // Get owned string of input text
-    let text: String = text.into();
+    let text: &str = text.as_ref();
     // Check if a max_width specified
     match font_size_and_max_width {
         // If no max width given we just have to split by lines
@@ -90,6 +90,7 @@ pub fn string_to_lines<T: Into<String>>(text: T, font_size_and_max_width: Option
                         // Check that the current word will not push us over the size limit
                         let word_width: f32 = text_width(word, font_size);
                         if word_width + accumulator_width <= max_width {
+                            
                             // Add the word if there is room
                             accumulator.push_str(word);
                             accumulator_width += word_width;
@@ -99,10 +100,13 @@ pub fn string_to_lines<T: Into<String>>(text: T, font_size_and_max_width: Option
                                 accumulator_width += space_width;
                             }
                             // Can't fit a space, push the accumulator to start a new line
+                            // Starts with the current word
                             else {
                                 output.push(accumulator.clone());
                                 accumulator.clear();
-                                accumulator_width = 0.;
+                                accumulator.push_str(word);
+                                accumulator.push(' ');
+                                accumulator_width = word_width + space_width;
                             }
                             // Go to next word
                             continue;
@@ -114,11 +118,14 @@ pub fn string_to_lines<T: Into<String>>(text: T, font_size_and_max_width: Option
                             accumulator.clear();
                             // Add the current word to the line (will overflow if one word is larger than the max allowable width)
                             accumulator.push_str(word);
-                            accumulator_width = word_width;
+                            accumulator.push(' ');
+                            accumulator_width = word_width + space_width;
                             // Go to next word
                             continue;
                         }
                     }
+                    // Push anything left in the accumulator to the line
+                    output.push(accumulator);
                 }
                 
             }

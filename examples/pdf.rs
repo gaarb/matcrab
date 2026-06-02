@@ -12,7 +12,7 @@ fn main() {
     fig.xlabel("Time (ms)");
     fig.ylabel("Pressure, Voltage, Current");
 
-    fig.title("Where's the freaking gabagool??");
+    fig.title("Example Plot Title");
 
     fig.ax_position(72., 72., 640.8, 558.);
 
@@ -29,7 +29,15 @@ fn main() {
 
     fig.legend(Some((648., 72., 774., 198.)));
 
-    let results_box = TextBox::new("Fart", 648., 205.2, 774., 349.2);
+    let results_box = TextBox {
+        text: "Results can go in here\n\nCan also do comments and they can spill into multiple lines".into(),
+        font_size: 12.,
+        ltrb: (648., 205.2, 774., 349.2),
+        vertical_alignment: VerticalAlignment::Middle,
+        horizontal_alignment: HorizontalAlignment::Center,
+        ..Default::default()
+    };
+
     fig.add_textbox(results_box);
 
     document.add_figure(fig);

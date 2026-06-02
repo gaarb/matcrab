@@ -4,6 +4,7 @@ use std::cmp::max;
 use krilla;
 use tiny_skia;
 use crate::figure::Figure;
+use crate::figure::annotation::{HorizontalAlignment, VerticalAlignment};
 use crate::paint::{Color, Dash, Stroke};
 use crate::Config;
 use crate::text::{default_font, text_height, text_width, string_to_lines};
@@ -459,5 +460,68 @@ fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
         let (l, t, r, b) = textbox.ltrb;
         pb.push_rect(krilla::geom::Rect::from_ltrb(l, t, r, b).unwrap());
         surface.draw_path(&pb.finish().unwrap());
+
+        // Set the stroke and fill for the text
+        surface.set_stroke(None);
+        surface.set_fill(textbox.font_color.clone().into());
+
+        // Split the text into lines
+        let text_by_line = string_to_lines(&textbox.text, Some((textbox.font_size, textbox.ltrb.2 - textbox.ltrb.0 - 2.*textbox.padding)));
+        // Spacing for each line
+        let line_height = textbox.line_spacing*textbox.font_size;
+        // Starting y coordinate
+        let mut y = match textbox.vertical_alignment {
+            // Aligned on top edge of the textbox
+            VerticalAlignment::Top => textbox.ltrb.1 + textbox.padding,
+            // Centered in text box
+            VerticalAlignment::Middle => {
+                // Height of the textbox
+                let height: f32 = textbox.ltrb.3 - textbox.ltrb.1 - 2.*textbox.padding;
+                // Space on top or bottom of text box (box height - paragraph height)/2
+                let empty_space = 0.5*(height - line_height*text_by_line.iter().count() as f32);
+                // Starting y for the text
+                textbox.ltrb.1 + empty_space
+            },
+            // Aligned on bottom edge of text box
+            VerticalAlignment::Bottom => {
+                // Height of the textbox
+                let height: f32 = textbox.ltrb.3 - textbox.ltrb.1 - 2.*textbox.padding;
+                // Space on top or bottom of text box (box height - paragraph height - bottom padding)
+                let empty_space = (height - line_height*text_by_line.iter().count() as f32 - textbox.padding);
+                // Starting y for the text
+                textbox.ltrb.1 + empty_space
+            },
+        };
+
+        // Width of the textbox
+        let width: f32 = textbox.ltrb.2 - textbox.ltrb.0;
+
+        // Iterate through the lines
+        for line in text_by_line {
+            // increment y coordinate
+            y += line_height;
+            // x coordinate to start drawing the text at
+            let x: f32 = match textbox.horizontal_alignment {
+                // Aligned on left edge of textbox
+                HorizontalAlignment::Left => textbox.ltrb.0 + textbox.padding,
+                //
+                HorizontalAlignment::Center => textbox.ltrb.0 + 0.5*width - 0.5*text_width(&line, textbox.font_size),
+                //
+                HorizontalAlignment::Right => textbox.ltrb.1 - textbox.padding - text_width(&line, textbox.font_size),
+            };
+
+            // Draw the text
+            surface.draw_text(
+                krilla::geom::Point::from_xy(x, y),
+                default_font(),
+                textbox.font_size,
+                &line,
+                false,
+                krilla::text::TextDirection::LeftToRight
+            );
+
+        }
+
+
     }
 }
