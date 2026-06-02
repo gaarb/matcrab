@@ -14,52 +14,30 @@ pub enum VerticalAlignment {
 }
 
 
-
-pub struct Rectangle {
-    // 
-    pub stroke: Stroke,
-    pub fill: Color,
-    //
-    pub position: (f32, f32),
-    pub size: (f32, f32),
-}
-impl Rectangle {
-    // Change stroke variables
-    pub fn set_stroke_color(&mut self, color: Color) { self.stroke.color = color; }
-    pub fn set_stroke_dash (&mut self, dash:  Dash)  { self.stroke.dash  = dash; }
-    pub fn set_stroke_width(&mut self, width: f32  ) { self.stroke.width = width; }
-}
-impl Default for Rectangle {
-    fn default() -> Self {
-        Self {
-            stroke: Stroke { color: Color::BLACK, dash: Dash::Solid, width: 1. },
-            fill: Color::TRANSPARENT,
-            position: (0., 0.),
-            size: (72., 72.)
-        }
-    }
-}
-
-
 pub struct TextBox {
     //
-    text: String,
+    pub(crate) text: String,
+    pub(crate) horizontal_alignment: HorizontalAlignment,
+    pub(crate) vertical_alignment: VerticalAlignment,
+    pub(crate) horizontal_padding: f32,
     //
-    font_color: Color,
-    font_size: f32,
+    pub(crate) font_color: Color,
+    pub(crate) font_size: f32,
     //
-    box_stroke: Stroke,
-    box_fill: Color,
+    pub(crate) box_stroke: Stroke,
+    pub(crate) box_fill: Color,
     //
-    position: (f32, f32),
-    size: (f32, f32),
+    pub(crate) ltrb: (f32, f32, f32, f32),
 }
 impl TextBox {
     //
-    pub fn new<T: Into<String>>(text: T, x: f32, y: f32, w: f32, h: f32) -> Self {
+    pub fn new<T: Into<String>>(text: T, l: f32, t: f32, r: f32, b: f32) -> Self {
         Self {
             //
             text: text.into(),
+            horizontal_alignment: HorizontalAlignment::Left,
+            vertical_alignment: VerticalAlignment::Bottom,
+            horizontal_padding: 5.,
             //
             font_color: Color::BLACK,
             font_size: 9.,
@@ -67,8 +45,7 @@ impl TextBox {
             box_stroke: Stroke { color: Color::BLACK, dash: Dash::Solid, width: 1. },
             box_fill: Color::TRANSPARENT,
             //
-            position: (x, y),
-            size: (w, h)
+            ltrb: (l, t, r, b),
         }
     }
     //

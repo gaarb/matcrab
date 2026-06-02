@@ -73,19 +73,9 @@ impl Into<Option<krilla::paint::StrokeDash>> for Dash {
     fn into(self) -> Option<krilla::paint::StrokeDash> {
         match self {
             Self::Solid => return None,
-            Self::Dashed => return Some(krilla::paint::StrokeDash { array: vec![10., 5.], offset: 0. }),
-            Self::DashDot => return Some(krilla::paint::StrokeDash { array: vec![10., 5., 1., 5.], offset: 0. }),
-            Self::Dotted => return Some(krilla::paint::StrokeDash { array: vec![1., 5.], offset: 0. }),
-        }
-    }
-}
-impl Into<Option<tiny_skia::StrokeDash>> for Dash {
-    fn into(self) -> Option<tiny_skia::StrokeDash> {
-        match self {
-            Self::Solid => return None,
-            Self::Dashed => return tiny_skia::StrokeDash::new(vec![10., 5.], 0.),
-            Self::DashDot => return tiny_skia::StrokeDash::new(vec![10., 5., 1., 5.], 0.),
-            Self::Dotted => return tiny_skia::StrokeDash::new(vec![1., 5.], 0.),
+            Self::Dashed => return Some(krilla::paint::StrokeDash { array: vec![10., 3.], offset: 2.5 }),
+            Self::DashDot => return Some(krilla::paint::StrokeDash { array: vec![10., 3., 0., 3.], offset: 4. }),
+            Self::Dotted => return Some(krilla::paint::StrokeDash { array: vec![0., 3.], offset: 1.5 }),
         }
     }
 }
@@ -121,18 +111,6 @@ impl Into<Option<krilla::paint::Stroke>> for Stroke {
             dash: self.dash.into()
         }); }
         else { return None; }
-    }
-}
-
-impl Into<tiny_skia::Stroke> for Stroke {
-    fn into(self) -> tiny_skia::Stroke {
-        tiny_skia::Stroke {
-            width: self.width,
-            miter_limit: 1.,
-            line_cap: tiny_skia::LineCap::Round,
-            line_join: tiny_skia::LineJoin::Round,
-            dash: self.dash.clone().into()
-        }
     }
 }
 

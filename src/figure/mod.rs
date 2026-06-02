@@ -6,7 +6,7 @@ mod series;
 pub mod annotation;
 
 use series::Series;
-use annotation::Annotation;
+use annotation::TextBox;
 
 
 enum LegendLocation {
@@ -49,7 +49,7 @@ pub struct Figure {
     pub(crate) data: Vec<Series>,
 
     // Annotations
-    pub(crate) annotations: Vec<Annotation>
+    pub(crate) text_boxes: Vec<TextBox>
 }
 impl Figure {
     // 
@@ -85,7 +85,7 @@ impl Figure {
             data: Vec::new(),
 
             // Annotations
-            annotations: Vec::new(),
+            text_boxes: Vec::new(),
         }
     }
 
@@ -338,8 +338,8 @@ impl Figure {
             (Some(color), Some(dash)) => Stroke { color, dash, width },
             // No dash specified, pick Dash::Solid
             (Some(color), None) => Stroke { color, dash: Dash::Solid, width },
-            // Specified dash and no color (why?), color will be black
-            (None, Some(dash)) => Stroke { color: Color::BLACK, dash, width }
+            // Specified dash and no color (why?), take the next color in the list anyway
+            (None, Some(dash)) => Stroke { color: self.stroke_palette.next().0, dash, width }
         };
 
         // Determine the label
@@ -356,6 +356,8 @@ impl Figure {
         self.data.push(Series { x, y, stroke, label });
 
     }
+
+    pub fn add_textbox(&mut self, textbox: TextBox) {self.text_boxes.push(textbox)}
 
 }
 
@@ -391,7 +393,7 @@ macro_rules! plot {
         plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
     };
     // Label off
-    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, label=none $(, $($keargs:tt)*)?) => {
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, label=none $(, $($kwargs:tt)*)?) => {
         // Set the label
         $series_label = Config::Off;
         // Next call
@@ -399,9 +401,50 @@ macro_rules! plot {
     };
 
     // Color specified
-    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, color=($r:expr, $g:expr, $b:expr) $(, $($keargs:tt)*)?) => {
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, color=($r:expr, $g:expr, $b:expr) $(, $($kwargs:tt)*)?) => {
         // Set the color
         $color = Some(Color::from_rgb($r, $g, $b));
+        // Next call
+        plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
+    };
+
+    // Dash specified
+    // Solid
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, dash="-" $(, $($kwargs:tt)*)?) => {
+        // Set to solid
+        $dash = Some(Dash::Solid);
+        // Next call
+        plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
+    };
+    // Dashed
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, dash="--" $(, $($kwargs:tt)*)?) => {
+        // Set to Dashed
+        $dash = Some(Dash::Dashed);
+        // Next call
+        plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
+    };
+    // DashDot
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, dash="-." $(, $($kwargs:tt)*)?) => {
+        // Set to DashDot
+        $dash = Some(Dash::DashDot);
+        // Next call
+        plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
+    };
+    // Dotted
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, dash=".." $(, $($kwargs:tt)*)?) => {
+        // Set to Dotted
+        $dash = Some(Dash::Dotted);
+        // Next call
+        plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
+    };
+    // Invalid input
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, dash=$invalid_input:tt $(, $($kwargs:tt)*)?) => {
+        // Print compile error message
+        compile_error!(concat!("Invalid dash type: ", stringify!($invalid_input), " in plot!() call. Valid dash inputs are:
+            \"-\"  -> Solid
+            \"--\" -> Dashed
+            \"-.\" -> DashDot
+            \"..\" -> Dotted"));
         // Next call
         plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
     };

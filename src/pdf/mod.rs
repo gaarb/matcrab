@@ -1,3 +1,6 @@
+use core::num;
+use std::cmp::max;
+
 use krilla;
 use tiny_skia;
 use crate::figure::Figure;
@@ -49,6 +52,8 @@ impl Document {
         draw_title(&mut surface, &fig);
         // Draw the legend
         draw_legend(&mut surface, &fig);
+        // Draw the text boxes
+        draw_text_boxes(&mut surface, &fig);
         
 
         surface.finish();
@@ -184,7 +189,12 @@ impl Figure {
             paint.set_color(series.stroke.color.clone().into());
             // Set the width and dash for this series
             stroke.width = series.stroke.width * upscaling;
-            stroke.dash = series.stroke.dash.clone().into();
+            stroke.dash = match series.stroke.dash {
+                Dash::Solid => None,
+                Dash::Dashed => tiny_skia::StrokeDash::new(vec![10.*upscaling, 3.*upscaling], 0.),
+                Dash::DashDot => tiny_skia::StrokeDash::new(vec![10.*upscaling, 3.*upscaling, 0., 3.*upscaling], 0.),
+                Dash::Dotted => tiny_skia::StrokeDash::new(vec![0., 3.*upscaling], 0.),
+            };
             // PathBuilder for this series
             let mut series_path = tiny_skia::PathBuilder::new();
             // Go to the first point
@@ -362,6 +372,9 @@ fn draw_title(surface: &mut krilla::surface::Surface, fig: &Figure) {
 fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
     //
     if let Config::On((left, top, right, bottom)) = fig.legend_ltrb {
+        // Font size to use for rendering
+        let mut legend_font_size: f32 = fig.legend_font_size;
+
         // Set the stroke and fill
         surface.set_stroke(Stroke::default().into());
         surface.set_fill(Color::WHITE.into());
@@ -369,15 +382,48 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
         let mut pb = krilla::geom::PathBuilder::new();
         pb.push_rect(krilla::geom::Rect::from_ltrb(left, top, right, bottom).unwrap());
         surface.draw_path(&pb.finish().unwrap());
+
+        // Find the widest legend label
+        let widest_label: f32 = {
+            let mut max_width: f32 = 0.;
+            for series in fig.data.iter() {
+                // If series has a label
+                if let Some(label) = &series.label {
+                    // Pick what is largest between running max and the label of the current series
+                    max_width = max_width.max(text_width(label, legend_font_size));
+                }
+            }
+            max_width
+        };
+        // If padding is less than 5.0 we are going to adjust the font size so that padding is 5.0
+        let padding: f32 = {
+            // Calculated padding
+            let mut padding = 0.5 * (right - left - 20.5 - widest_label);
+            // If the padding is less than 5.0 going to set it to 5.0 and then change font size to match
+            if padding < 5.0 {
+                padding = 5.0;
+                // String is constant so just need to apply scaling to get the max width down to what we want
+                // (right - left -  30.5) is width of the label if padding is 5.0
+                legend_font_size = legend_font_size * (right - left - 30.5) / widest_label;
+
+            }
+            padding
+        };
         
+        // Find the spacing and starting height for the legend entries based on the bounding box height
+        let num_entries: usize = fig.data.iter().filter(|s| s.label.is_some()).count();
+        let text_height = text_height(legend_font_size);
+        let step: f32 = (bottom - top + text_height) / (num_entries as f32 + 1.);
+
         // Loop through the series
-        let step: f32 = 1.5*fig.legend_font_size;
-        let text_height = text_height(fig.legend_font_size);
+        let half_text_height = 0.5 * text_height;
+        let x = left + padding;
+        let mut y = top;
         for (i, series) in fig.data.iter().enumerate() {
-            let (x, y) = (left + 5., top + step*((i+1) as f32));
+            y += step;
             let mut pb = krilla::geom::PathBuilder::new();
-            pb.move_to(x, y - text_height/2.);
-            pb.line_to(x + 40., y - text_height/2.);
+            pb.move_to(x, y - half_text_height);
+            pb.line_to(x + 18., y - half_text_height);
 
             //
             surface.set_stroke(series.stroke.clone().into());
@@ -388,14 +434,30 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
             surface.set_stroke(None);
             surface.set_fill(Color::BLACK.into());
             surface.draw_text(
-                krilla::geom::Point::from_xy(x + 42.5, y), 
+                krilla::geom::Point::from_xy(x + 20.5, y), 
                 default_font(), 
-                fig.legend_font_size, 
+                legend_font_size, 
                 &series.label.clone().unwrap(), 
                 false, 
                 krilla::text::TextDirection::LeftToRight
             );
         }
 
+    }
+}
+
+
+fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
+    //
+    for textbox in fig.text_boxes.iter() {
+        // Set the stroke and fill for the box
+        surface.set_stroke(textbox.box_stroke.clone().into());
+        surface.set_fill(textbox.box_fill.clone().into());
+
+        // Draw the bounding box
+        let mut pb = krilla::geom::PathBuilder::new();
+        let (l, t, r, b) = textbox.ltrb;
+        pb.push_rect(krilla::geom::Rect::from_ltrb(l, t, r, b).unwrap());
+        surface.draw_path(&pb.finish().unwrap());
     }
 }
