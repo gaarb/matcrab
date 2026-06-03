@@ -7,7 +7,7 @@ use crate::figure::Figure;
 use crate::figure::annotation::{HorizontalAlignment, VerticalAlignment};
 use crate::paint::{Color, Dash, Stroke};
 use crate::Config;
-use crate::text::{default_font, text_height, text_width, string_to_lines};
+use crate::text::{default_font, string_to_lines, text_height, text_width};
 
 pub struct Document {
     document: krilla::Document,
@@ -338,7 +338,7 @@ fn draw_title(surface: &mut krilla::surface::Surface, fig: &Figure) {
     // Check if figure has a title
     if let Some(title) = &fig.title {
         // Split into lines
-        let title = string_to_lines(title, None);
+        let title: Vec<&str> = title.lines().collect();
         // If there is no title exit the function
         if title.len() == 0 {return}
         // Height of the title
@@ -466,7 +466,7 @@ fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
         surface.set_fill(textbox.font_color.clone().into());
 
         // Split the text into lines
-        let text_by_line = string_to_lines(&textbox.text, Some((textbox.font_size, textbox.ltrb.2 - textbox.ltrb.0 - 2.*textbox.padding)));
+        let text_by_line = string_to_lines(&textbox.text, textbox.font_size, textbox.ltrb.2 - textbox.ltrb.0 - 2.*textbox.padding);
         // Spacing for each line
         let line_height = textbox.line_spacing*textbox.font_size;
         // Starting y coordinate
@@ -507,7 +507,7 @@ fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
                 //
                 HorizontalAlignment::Center => textbox.ltrb.0 + 0.5*width - 0.5*text_width(&line, textbox.font_size),
                 //
-                HorizontalAlignment::Right => textbox.ltrb.1 - textbox.padding - text_width(&line, textbox.font_size),
+                HorizontalAlignment::Right => textbox.ltrb.2 - textbox.padding - text_width(&line, textbox.font_size),
             };
 
             // Draw the text

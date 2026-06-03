@@ -60,77 +60,69 @@ pub fn em_size(font_size: f32) -> f32 {
 
 
 // Take an input string and split it into lines given a max allowable line width
-pub fn string_to_lines<T: AsRef<str>>(text: T, font_size_and_max_width: Option<(f32, f32)>) -> Vec<String> {
-    // Get owned string of input text
-    let text: &str = text.as_ref();
-    // Check if a max_width specified
-    match font_size_and_max_width {
-        // If no max width given we just have to split by lines
-        None => return text.lines().map(|line| line.into()).collect(),
+pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -> Vec<String> {
+    // Make sure the string is not empty
+    if text.as_ref().is_empty() {return Vec::new()}
 
-        // If a max width given we will still split where there are \n's, but check
-        // each individual line for width and split into multiple lines as necessary
-        Some((font_size, max_width)) => {
-            // Vector to hold the output
-            let mut output: Vec<String> = Vec::new();
-            // Iterate by lines (splits at any \n)
-            for line in text.lines() {
-                // If the line width ok then push it directly to the output vector and continue to the next line
-                if text_width(line, font_size) <= max_width {
-                    output.push(line.to_owned());
-                    continue;
+    // Start the output vector with empty string
+    let mut output: Vec<String> = Vec::new();
+
+    // Width of a space character - will use a lot later
+    let space_width: f32 = text_width(" ", font_size);
+    
+    // Loop through the input text
+    // First split at the line breaks
+    for line in text.as_ref().lines() {
+        // Width of the line
+        let line_width: f32 = text_width(line, font_size);
+        // Check if the width of the line will fit in the max width
+        if line_width <= max_width {
+            // Add the line to the output and move on
+            output.push(String::from(line));
+            continue;
+        }
+        // Does not fit and need to chop line up
+        else {
+            // Start the next line in output
+            output.push(String::new());
+            // width of the current line
+            let mut line_width: f32 = 0.;
+            // Iterate through the words
+            for word in line.trim_end().split(' ') {
+                // Length of the individual word
+                let word_width = text_width(word, font_size);
+                // Check if we can add the word without exceeding allowable length
+                if line_width + word_width <= max_width {
+                    // Add the word and a space
+                    let index = output.len() - 1;
+                    output[index].push_str(word);
+                    output[index].push(' ');
+                    line_width += word_width + space_width;
                 }
-                // If the line is too long we will have to figure out where to split it
+                // Word won't fit
                 else {
-                    let mut accumulator: String = String::new();
-                    let mut accumulator_width: f32 = 0.;
-                    let space_width = text_width(" ", font_size);
-                    // Iterate over all the words, excluding the trailing whitespace
-                    for word in line.trim_end().split(' ') {
-                        // Check that the current word will not push us over the size limit
-                        let word_width: f32 = text_width(word, font_size);
-                        if word_width + accumulator_width <= max_width {
-                            
-                            // Add the word if there is room
-                            accumulator.push_str(word);
-                            accumulator_width += word_width;
-                            // Check if we can also fit a space
-                            if space_width + accumulator_width <= max_width {
-                                accumulator.push(' ');
-                                accumulator_width += space_width;
-                            }
-                            // Can't fit a space, push the accumulator to start a new line
-                            // Starts with the current word
-                            else {
-                                output.push(accumulator.clone());
-                                accumulator.clear();
-                                accumulator.push_str(word);
-                                accumulator.push(' ');
-                                accumulator_width = word_width + space_width;
-                            }
-                            // Go to next word
-                            continue;
-                        }
-                        // If we can't fit word on current line, push the accumulator to start a new line
-                        else {
-                            // Add current line to output and clear
-                            output.push(accumulator.clone());
-                            accumulator.clear();
-                            // Add the current word to the line (will overflow if one word is larger than the max allowable width)
-                            accumulator.push_str(word);
-                            accumulator.push(' ');
-                            accumulator_width = word_width + space_width;
-                            // Go to next word
-                            continue;
-                        }
+                    // Check edge case of whether this is first word in the line
+                    let index = output.len() - 1;
+                    if output[index].is_empty() {
+                        // Is first word and still doesn't fit, add it to the line anyway
+                        output[index].push_str(word);
+                        line_width += word_width;
                     }
-                    // Push anything left in the accumulator to the line
-                    output.push(accumulator);
+                    // Line already has words in it
+                    else {
+                        // Start a new line
+                        output.push(String::new());
+                        line_width = 0.;
+                        // Add the word
+                        let index = output.len() - 1;
+                        output[index].push_str(word);
+                        output[index].push(' ');
+                        line_width += word_width + space_width;
+                    }
                 }
-                
             }
-            // Return the lines
-            return output;
         }
     }
+    // Return the output vector
+    return output
 }

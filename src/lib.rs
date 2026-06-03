@@ -3,7 +3,7 @@ use krilla;
 
 mod figure;
 mod paint;
-mod text;
+pub mod text;
 mod pdf;
 
 use figure::Figure;

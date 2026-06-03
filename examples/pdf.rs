@@ -34,7 +34,7 @@ fn main() {
         font_size: 12.,
         ltrb: (648., 205.2, 774., 349.2),
         vertical_alignment: VerticalAlignment::Middle,
-        horizontal_alignment: HorizontalAlignment::Center,
+        horizontal_alignment: HorizontalAlignment::Right,
         ..Default::default()
     };
 
