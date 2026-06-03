@@ -3,16 +3,18 @@ use krilla;
 
 mod figure;
 mod paint;
-pub mod text;
+mod text;
 mod pdf;
+mod annotation;
 
 use figure::Figure;
 use paint::{Color, Dash, Stroke};
 
 
 pub mod prelude {
-    pub use crate::figure::{Figure, annotation::{TextBox, VerticalAlignment, HorizontalAlignment}};
-    pub use crate::paint::{Color, Dash};
+    pub use crate::figure::Figure;
+    pub use crate::annotation::{Rectangle, Text, TextBox, VerticalAlignment, HorizontalAlignment};
+    pub use crate::paint::{Color, Dash, Stroke};
     pub use crate::pdf::Document;
     pub use crate::{plot, Config};
 }

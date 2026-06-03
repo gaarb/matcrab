@@ -1,9 +1,9 @@
 use crate::text::{text_height, text_width};
 use crate::{Config, ToF32};
 use crate::paint::{Color, Dash, Stroke, StrokePalette};
+use crate::annotation::{self, Annotation, AnnotationElement};
 
 mod series;
-pub mod annotation;
 
 use series::Series;
 use annotation::TextBox;
@@ -49,7 +49,7 @@ pub struct Figure {
     pub(crate) data: Vec<Series>,
 
     // Annotations
-    pub(crate) text_boxes: Vec<TextBox>
+    pub(crate) annotations: Vec<AnnotationElement>
 }
 impl Figure {
     // 
@@ -85,7 +85,7 @@ impl Figure {
             data: Vec::new(),
 
             // Annotations
-            text_boxes: Vec::new(),
+            annotations: Vec::new(),
         }
     }
 
@@ -357,7 +357,8 @@ impl Figure {
 
     }
 
-    pub fn add_textbox(&mut self, textbox: TextBox) {self.text_boxes.push(textbox)}
+    // Add an annotation to the plot
+    pub fn annotate(&mut self, annotation: &dyn Annotation) { for element in annotation.to_buffer() {self.annotations.push(element)}; }
 
 }
 

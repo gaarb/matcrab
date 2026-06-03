@@ -60,9 +60,9 @@ pub fn em_size(font_size: f32) -> f32 {
 
 
 // Take an input string and split it into lines given a max allowable line width
-pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -> Vec<String> {
+pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -> Option<Vec<String>> {
     // Make sure the string is not empty
-    if text.as_ref().is_empty() {return Vec::new()}
+    if text.as_ref().is_empty() {return None}
 
     // Start the output vector with empty string
     let mut output: Vec<String> = Vec::new();
@@ -75,54 +75,49 @@ pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -
     for line in text.as_ref().lines() {
         // Width of the line
         let line_width: f32 = text_width(line, font_size);
+
         // Check if the width of the line will fit in the max width
         if line_width <= max_width {
             // Add the line to the output and move on
             output.push(String::from(line));
             continue;
         }
+
+
         // Does not fit and need to chop line up
         else {
-            // Start the next line in output
-            output.push(String::new());
-            // width of the current line
-            let mut line_width: f32 = 0.;
-            // Iterate through the words
-            for word in line.trim_end().split(' ') {
+
+            // Iterator over the words in the line
+            let mut word_iter = line.trim_end().split(' ');
+            // Start the next line in output with the first word from the iterator
+            if let Some(word) = word_iter.next() { output.push(String::from(word)); } else { continue; }
+            // Starting width of the line
+            let mut line_width: f32 = text_width(output.last().unwrap(), font_size);
+
+            // Iterate through the rest of the words
+            for word in word_iter {
                 // Length of the individual word
                 let word_width = text_width(word, font_size);
-                // Check if we can add the word without exceeding allowable length
-                if line_width + word_width <= max_width {
-                    // Add the word and a space
-                    let index = output.len() - 1;
-                    output[index].push_str(word);
-                    output[index].push(' ');
+
+                // Check if we can add a space then this word without exceeding max allowable length
+                if line_width + word_width + space_width <= max_width {
+                    // Add a space then the next word
+                    output.last_mut().unwrap().push(' ');
+                    output.last_mut().unwrap().push_str(word);
+                    // Update the line length
                     line_width += word_width + space_width;
                 }
+
                 // Word won't fit
                 else {
-                    // Check edge case of whether this is first word in the line
-                    let index = output.len() - 1;
-                    if output[index].is_empty() {
-                        // Is first word and still doesn't fit, add it to the line anyway
-                        output[index].push_str(word);
-                        line_width += word_width;
-                    }
-                    // Line already has words in it
-                    else {
-                        // Start a new line
-                        output.push(String::new());
-                        line_width = 0.;
-                        // Add the word
-                        let index = output.len() - 1;
-                        output[index].push_str(word);
-                        output[index].push(' ');
-                        line_width += word_width + space_width;
-                    }
+                    // Add a new line and start with this word
+                    // Start a new line
+                    output.push(String::from(word));
+                    line_width = word_width;
                 }
             }
         }
     }
     // Return the output vector
-    return output
+    return Some(output)
 }

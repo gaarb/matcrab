@@ -4,7 +4,7 @@ use std::cmp::max;
 use krilla;
 use tiny_skia;
 use crate::figure::Figure;
-use crate::figure::annotation::{HorizontalAlignment, VerticalAlignment};
+use crate::annotation::{AnnotationElement, HorizontalAlignment, VerticalAlignment};
 use crate::paint::{Color, Dash, Stroke};
 use crate::Config;
 use crate::text::{default_font, string_to_lines, text_height, text_width};
@@ -54,7 +54,7 @@ impl Document {
         // Draw the legend
         draw_legend(&mut surface, &fig);
         // Draw the text boxes
-        draw_text_boxes(&mut surface, &fig);
+        draw_annotation_elements(&mut surface, fig);
         
 
         surface.finish();
@@ -447,7 +447,7 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
     }
 }
 
-
+/*
 fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
     //
     for textbox in fig.text_boxes.iter() {
@@ -523,5 +523,44 @@ fn draw_text_boxes(surface: &mut krilla::surface::Surface, fig: &Figure) {
         }
 
 
+    }
+}
+*/
+
+
+
+fn draw_annotation_elements(surface: &mut krilla::surface::Surface, fig: Figure) {
+    // Loop through the annotation elements
+    for element in fig.annotations {
+        // Match on type of annotation
+        match element {
+            
+            AnnotationElement::Rectangle { left, top, right, bottom, stroke, fill } => {
+                // Set the stroke and fill
+                surface.set_stroke(stroke.into());
+                surface.set_fill(fill.into());
+
+                // Draw the rectangle
+                let mut path = krilla::geom::PathBuilder::new();
+                path.push_rect(krilla::geom::Rect::from_ltrb(left, top, right, bottom).unwrap());
+                surface.draw_path(&path.finish().unwrap());
+            }
+
+            AnnotationElement::Text { x, y, text, font_size, font_color } => {
+                // Set the stroke and fill
+                surface.set_stroke(None);
+                surface.set_fill(font_color.into());
+
+                // Draw the text
+                surface.draw_text(
+                    krilla::geom::Point::from_xy(x, y),
+                    default_font(),
+                    font_size,
+                    &text,
+                    false,
+                    krilla::text::TextDirection::LeftToRight
+                );
+            }
+        }
     }
 }

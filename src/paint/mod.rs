@@ -36,7 +36,7 @@ impl Color {
     pub const RED:          Self = Self {r: 255, g:   0, b:   0, a: 255};
     pub const GREEN:        Self = Self {r:   0, g: 255, b:   0, a: 255};
     pub const BLUE:         Self = Self {r:   0, g:   0, b: 255, a: 255};
-    pub const TRANSPARENT:  Self = Self {r:   0, g:   0, b: 0, a: 0};
+    pub const TRANSPARENT:  Self = Self {r:   0, g:   0, b: 0,   a: 0};
 
     // Default colors for the grid lines
     pub const DEFAULT_MAJOR: Self = Self {r: 140, g: 140, b: 140, a: 255};

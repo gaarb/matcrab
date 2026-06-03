@@ -29,16 +29,30 @@ fn main() {
 
     fig.legend(Some((648., 72., 774., 198.)));
 
-    let results_box = TextBox {
-        text: "Results can go in here\n\nCan also do comments and they can spill into multiple lines".into(),
-        font_size: 12.,
+    let results_box = Rectangle {
         ltrb: (648., 205.2, 774., 349.2),
-        vertical_alignment: VerticalAlignment::Middle,
-        horizontal_alignment: HorizontalAlignment::Right,
         ..Default::default()
     };
 
-    fig.add_textbox(results_box);
+    let opening_response_label = Text {
+        text: "Opening:".into(),
+        font_size: 12.,
+        ltrb: (648., 205.2, 774., 223.2),
+        padding: 3.,
+        ..Default::default()
+    };
+
+    let opening_response = Text {
+        text: "63.5 ms".into(),
+        font_size: 18.,
+        ltrb: (648., 223.2, 774., 248.2),
+        padding: 3.,
+        ..Default::default()
+    };
+
+    fig.annotate(&results_box);
+    fig.annotate(&opening_response_label);
+    fig.annotate(&opening_response);
 
     document.add_figure(fig);
 
