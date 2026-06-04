@@ -36,17 +36,17 @@ fn main() {
 
     let opening_response_label = Text {
         text: "Opening:".into(),
-        font_size: 12.,
-        ltrb: (648., 205.2, 774., 223.2),
-        padding: 3.,
+        font_size: 18.,
+        x: 651.,
+        y: 223.2,
         ..Default::default()
     };
 
     let opening_response = Text {
         text: "63.5 ms".into(),
-        font_size: 18.,
-        ltrb: (648., 223.2, 774., 248.2),
-        padding: 3.,
+        font_size: 24.,
+        x: 651.,
+        y: 252.,
         ..Default::default()
     };
 
