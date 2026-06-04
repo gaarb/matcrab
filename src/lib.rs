@@ -13,7 +13,7 @@ use paint::{Color, Dash, Stroke};
 
 pub mod prelude {
     pub use crate::figure::Figure;
-    pub use crate::annotation::{Rectangle, Text, TextBox, VerticalAlignment, HorizontalAlignment};
+    pub use crate::annotation::{Rectangle, Text, TextBox, image::Image, VerticalAlignment, HorizontalAlignment};
     pub use crate::paint::{Color, Dash, Stroke};
     pub use crate::pdf::Document;
     pub use crate::{plot, Config};

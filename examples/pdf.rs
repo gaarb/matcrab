@@ -1,5 +1,7 @@
 use matcrab::prelude::*;
 
+const LOGO: &[u8] = include_bytes!("../example_assets/logo.png");
+
 fn main() {
 
     let mut document = Document::new("test.pdf");
@@ -50,9 +52,12 @@ fn main() {
         ..Default::default()
     };
 
+    let logo = Image::from_png(LOGO.into(), 684.9825, 18., 774., 64.8);
+
     fig.annotate(&results_box);
     fig.annotate(&opening_response_label);
     fig.annotate(&opening_response);
+    fig.annotate(&logo);
 
     document.add_figure(fig);
 

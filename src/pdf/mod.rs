@@ -4,7 +4,7 @@ use std::cmp::max;
 use krilla;
 use tiny_skia;
 use crate::figure::Figure;
-use crate::annotation::{AnnotationElement, HorizontalAlignment, VerticalAlignment};
+use crate::annotation::{AnnotationElement, HorizontalAlignment, VerticalAlignment, image::{Image, ImageData}};
 use crate::paint::{Color, Dash, Stroke};
 use crate::Config;
 use crate::text::{default_font, string_to_lines, text_height, text_width};
@@ -421,6 +421,9 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
         let x = left + padding;
         let mut y = top;
         for (i, series) in fig.data.iter().enumerate() {
+
+            if let None = series.label {continue;}
+
             y += step;
             let mut pb = krilla::geom::PathBuilder::new();
             pb.move_to(x, y - half_text_height);
@@ -560,6 +563,18 @@ fn draw_annotation_elements(surface: &mut krilla::surface::Surface, fig: Figure)
                     false,
                     krilla::text::TextDirection::LeftToRight
                 );
+            }
+
+            AnnotationElement::Image { image, left, top, right, bottom } => {
+                // Load the image into krilla
+                let image_annotation = match image {
+                    ImageData::PNG(data) => krilla::image::Image::from_png(data.into(), false).unwrap()
+                };
+
+                // 
+                surface.push_transform(&krilla::geom::Transform::from_translate(left, top));
+                surface.draw_image(image_annotation, krilla::geom::Size::from_wh(right - left, bottom - top).unwrap());
+                surface.pop();
             }
         }
     }

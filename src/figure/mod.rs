@@ -394,7 +394,7 @@ macro_rules! plot {
         plot!(@parse $color, $dash, $width, $series_label $(, $($kwargs)*)?);
     };
     // Label off
-    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, label=none $(, $($kwargs:tt)*)?) => {
+    (@parse $color:ident, $dash:ident, $width:ident, $series_label:ident, nolabel $(, $($kwargs:tt)*)?) => {
         // Set the label
         $series_label = Config::Off;
         // Next call

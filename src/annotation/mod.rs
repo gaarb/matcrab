@@ -1,5 +1,7 @@
 use crate::{Color, Dash, Stroke, text::{string_to_lines, text_height, text_width}};
 
+pub mod image;
+
 
 pub trait Annotation {
     fn to_buffer(&self) -> Vec<AnnotationElement>;
@@ -31,6 +33,15 @@ pub enum AnnotationElement {
         font_size: f32,
         font_color: Color,
     },
+
+    // An image to insert
+    Image {
+        // Image data
+        image: image::ImageData,
+
+        //
+        left: f32, top: f32, right: f32, bottom: f32
+    }
 }
 
 
