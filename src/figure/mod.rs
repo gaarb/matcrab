@@ -6,7 +6,16 @@ use crate::annotation::{self, Annotation, AnnotationElement};
 mod series;
 
 use series::Series;
-use annotation::TextBox;
+
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum MatcrabFigureError {
+    #[error("Invalid Figure size {width:?} x {height:?} in Figure creation.")]
+    FigureSizeError {width: f32, height: f32},
+
+
+}
 
 
 enum LegendLocation {
@@ -53,45 +62,53 @@ pub struct Figure {
 }
 impl Figure {
     // 
-    pub fn with_size(fig_width: f32, fig_height: f32) -> Self {
-        Self {
-            // Fig settings
-            fig_size: (fig_width, fig_height),
+    pub fn with_size(fig_width: f32, fig_height: f32) -> Result<Self, MatcrabFigureError> {
+        // Dimensions are positive, build the Figure struct
+        if fig_width > 0. && fig_height > 0. {
+            Ok(
+                Self {
+                    // Fig settings
+                    fig_size: (fig_width, fig_height),
 
-            // Text items
-            tick_label_font_size: 9.,
-            axis_label_font_size: 9.,
-            title_font_size: 16.,
-            legend_font_size: 9.,
-            xlabel: None,
-            ylabel: None,
-            title: None,
-            num_decimals: (0, 0),
+                    // Text items
+                    tick_label_font_size: 9.,
+                    axis_label_font_size: 9.,
+                    title_font_size: 16.,
+                    legend_font_size: 9.,
+                    xlabel: None,
+                    ylabel: None,
+                    title: None,
+                    num_decimals: (0, 0),
 
-            // Axes Settings
-            ax_size: (fig_width*0.8, fig_height*0.8),
-            ax_position: (fig_width*0.1, fig_height*0.1),
-            xlim: None,
-            ylim: None,
-            major_spacing: Config::Pending,
-            major_ticks: Config::Pending,
-            minor_spacing: Config::Pending,
-            legend_ltrb: Config::Off,
+                    // Axes Settings
+                    ax_size: (fig_width*0.8, fig_height*0.8),
+                    ax_position: (fig_width*0.1, fig_height*0.1),
+                    xlim: None,
+                    ylim: None,
+                    major_spacing: Config::Pending,
+                    major_ticks: Config::Pending,
+                    minor_spacing: Config::Pending,
+                    legend_ltrb: Config::Off,
 
-            //
-            stroke_palette: StrokePalette::default(),
+                    //
+                    stroke_palette: StrokePalette::default(),
 
-            // The data
-            data: Vec::new(),
+                    // The data
+                    data: Vec::new(),
 
-            // Annotations
-            annotations: Vec::new(),
+                    // Annotations
+                    annotations: Vec::new(),
+                }
+            )
         }
+        // Some input is negative, throw error
+        else { Err(MatcrabFigureError::FigureSizeError { width: fig_width, height: fig_height })}
     }
 
     // Set the axis limits
-    pub fn xlim(&mut self, min: f32, max: f32) { self.xlim = Some( (min, max) ); }
-    pub fn ylim(&mut self, min: f32, max: f32) { self.ylim = Some( (min, max) ); }
+    // Guarantees max > min for the axes
+    pub fn xlim(&mut self, min: f32, max: f32) { self.xlim = Some( (min.min(max), max.max(min)) ); }
+    pub fn ylim(&mut self, min: f32, max: f32) { self.ylim = Some( (min.min(max), max.max(min)) ); }
 
     // Set the axis labels
     pub fn xlabel<T: Into<String>>(&mut self, label: T) { self.xlabel = Some(label.into()); }
@@ -100,23 +117,19 @@ impl Figure {
     // Set the title
     pub fn title<T: Into<String>>(&mut self, title: T) { self.title = Some(title.into()); }
 
-    // Add a text box annotation
-
     // Set the axes position and size
     // (x, y) is position from the bottom left corner of the figure
     // (w, h) is the width and height of the axes
-    pub fn ax_position(&mut self, l: f32, t: f32, r: f32, b: f32) {
-        self.ax_size = (r - l, b - t);
-        self.ax_position = (l, t);
+    // Guarantees right > left and bottom > top
+    pub fn ax_position_ltrb(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
+        let (left, right) = (left.min(right), right.max(left));
+        let (top, bottom) = (top.min(bottom), bottom.min(top));
+        self.ax_size = (right - left, bottom - top);
+        self.ax_position = (left, top);
     }
 
-    pub fn legend(&mut self, position_ltrb: Option<(f32, f32, f32, f32)>) {
-        //
-        self.legend_ltrb = match position_ltrb {
-            None => Config::Pending,
-            Some((l, t, r, b)) => Config::On((l, t, r, b))
-        };
-    }
+    // Add a legend to the figure with position/size specified with left, top, right, bottom edge coordinates
+    pub fn legend_with_ltrb(&mut self, left: f32, top: f32, right: f32, bottom: f32) { self.legend_ltrb = Config::On((left, top, right, bottom)); }
 
     // Set all the automatically calculated settings (grid spacing, limits, num display decimals)
     pub(crate) fn resolve_settings(&mut self) {

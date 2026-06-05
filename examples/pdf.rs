@@ -1,12 +1,12 @@
 use matcrab::prelude::*;
 
-const LOGO: &[u8] = include_bytes!("../example_assets/logo.png");
+const FERRIS: &[u8] = include_bytes!("../examples/assets/ferris.png");
 
 fn main() {
 
-    let mut document = Document::new("test.pdf");
+    let mut document = Document::new("examples/output/example.pdf");
     
-    let mut fig: Figure = Figure::with_size(796., 612.);
+    let mut fig: Figure = Figure::with_size(796., 612.).unwrap();
 
     fig.xlim(0., 6.28);
     fig.ylim(-1., 1.);
@@ -16,7 +16,7 @@ fn main() {
 
     fig.title("Example Plot Title");
 
-    fig.ax_position(72., 72., 640.8, 558.);
+    fig.ax_position_ltrb(72., 72., 640.8, 558.);
 
     let x: Vec<f32> = (0..=628).map(|x| x as f32/100.).collect();
     let y: Vec<f32> = x.iter().map(|x| x.sin()).collect();
@@ -29,7 +29,7 @@ fn main() {
     plot!(fig, x, y3, label="sin(x + pi)", dash="-.");
     plot!(fig, x, y4, label="sin(x + 3*pi/2)", dash="..");
 
-    fig.legend(Some((648., 72., 774., 198.)));
+    fig.legend_with_ltrb(648., 72., 774., 198.);
 
     let results_box = Rectangle {
         ltrb: (648., 205.2, 774., 349.2),
@@ -52,12 +52,12 @@ fn main() {
         ..Default::default()
     };
 
-    let logo = Image::from_png(LOGO.into(), 684.9825, 18., 774., 64.8);
+    let ferris = Image::from_png(FERRIS.into(), 703.8, 18., 774., 64.8);
 
     fig.annotate(&results_box);
     fig.annotate(&opening_response_label);
     fig.annotate(&opening_response);
-    fig.annotate(&logo);
+    fig.annotate(&ferris);
 
     document.add_figure(fig);
 

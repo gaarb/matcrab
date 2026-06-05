@@ -6,6 +6,7 @@ mod paint;
 mod text;
 mod pdf;
 mod annotation;
+mod error;
 
 use figure::Figure;
 use paint::{Color, Dash, Stroke};
