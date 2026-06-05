@@ -1,4 +1,6 @@
-use crate::{Color, Dash, Stroke, text::{string_to_lines, text_height, text_width}};
+use krilla::text::Font;
+
+use crate::{Color, Dash, Stroke, text::{string_to_lines, text_height, text_width, FontWeight}};
 
 pub mod image;
 
@@ -32,6 +34,7 @@ pub enum AnnotationElement {
         // Text formatting
         font_size: f32,
         font_color: Color,
+        font_weight: FontWeight,
     },
 
     // An image to insert
@@ -109,6 +112,7 @@ pub struct Text {
     // Font formatting
     pub font_color: Color,
     pub font_size: f32,
+    pub font_weight: FontWeight,
 
     // Location of bottom left corner of text (before padding)
     pub x: f32,
@@ -123,6 +127,7 @@ impl Default for Text {
             // Font formatting
             font_color: Color::BLACK,
             font_size: 9.,
+            font_weight: FontWeight::Normal,
 
             // Position (origin)
             x: 0.,
@@ -141,7 +146,8 @@ impl Annotation for Text {
             y: self.y, 
             text: self.text.clone(), 
             font_size: self.font_size, 
-            font_color: self.font_color.clone() 
+            font_color: self.font_color.clone(),
+            font_weight: self.font_weight.clone()
         });
         // Return the buffer
         return buffer;
@@ -160,6 +166,7 @@ pub struct TextBox {
     pub line_spacing: f32,
     pub font_color: Color,
     pub font_size: f32,
+    pub font_weight: FontWeight,
 
     // Box formatting
     pub box_stroke: Stroke,
@@ -181,6 +188,7 @@ impl Default for TextBox {
             line_spacing: 1.2,
             font_color: Color::BLACK,
             font_size: 9.,
+            font_weight: FontWeight::Normal,
 
             // Box formatting
             box_stroke: Stroke::default(),
@@ -212,7 +220,7 @@ impl Annotation for TextBox {
         //
         let (width, height): (f32, f32) = (right - left, bottom - top);
         let line_height = self.line_spacing * self.font_size;
-        let text = string_to_lines(&self.text, self.font_size, width - 2.*self.padding).unwrap();
+        let text = string_to_lines(&self.text, self.font_size, &self.font_weight, width - 2.*self.padding).unwrap();
 
         // Get starting y coordinate based on text alignment
         let mut y: f32 = match self.vertical_alignment {
@@ -233,12 +241,12 @@ impl Annotation for TextBox {
                 // Aligned on left edge of textbox
                 HorizontalAlignment::Left => left + self.padding,
                 //
-                HorizontalAlignment::Center => left + 0.5*width - 0.5*text_width(&line, self.font_size),
+                HorizontalAlignment::Center => left + 0.5*width - 0.5*text_width(&line, self.font_size, &self.font_weight),
                 //
-                HorizontalAlignment::Right => right - self.padding - text_width(&line, self.font_size),
+                HorizontalAlignment::Right => right - self.padding - text_width(&line, self.font_size, &self.font_weight),
             };
             // Add the text element to the buffer
-            buffer.push(AnnotationElement::Text { x, y, text: line, font_size: self.font_size, font_color: self.font_color.clone() });
+            buffer.push(AnnotationElement::Text { x, y, text: line, font_size: self.font_size, font_color: self.font_color.clone(), font_weight: self.font_weight.clone() });
             // Increment y coordinate
             y += line_height;
         }

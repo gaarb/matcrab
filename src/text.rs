@@ -4,15 +4,41 @@ use rustybuzz::{self, ttf_parser};
 // Compile raw data for default font directly in the crate
 const DEFAULT_FONT: &'static [u8] = include_bytes!("../assets/OpenSans-VariableFont_wdth,wght.ttf");
 
+#[derive(Debug, Clone)]
+pub enum FontWeight {
+    Normal,
+    Bold,
+}
+impl FontWeight {
+    fn krilla_variation(&self) -> (krilla::text::Tag, f32) {
+        return (krilla::text::Tag::new(b"wght"), match self {
+            Self::Normal => 400.,
+            Self::Bold => 700.,
+        });
+    }
+
+    fn rustybuzz_varitation(&self) -> rustybuzz::Variation {
+        return rustybuzz::Variation {
+            tag: ttf_parser::Tag::from_bytes(b"wght"),
+            value: match self {
+                Self::Normal => 400.,
+                Self::Bold => 700.,
+            }
+        }
+    }
+}
+
 // Get the default font as a krilla font object
-pub fn default_font() -> krilla::text::Font {
-    krilla::text::Font::new(DEFAULT_FONT.to_vec().into(), 0).unwrap()
+pub fn default_font(weight: &FontWeight) -> krilla::text::Font {
+    krilla::text::Font::new_variable(DEFAULT_FONT.to_vec().into(), 0, &[weight.krilla_variation()]).unwrap()
 }
 
 // Get the width of the input text in the default font using rustybuzz parser
-pub fn text_width(text: &str, font_size: f32) -> f32 {
+pub fn text_width(text: &str, font_size: f32, weight: &FontWeight) -> f32 {
     // Load the font face
-    let face = rustybuzz::Face::from_slice(DEFAULT_FONT, 0).unwrap();
+    let mut face = rustybuzz::Face::from_slice(DEFAULT_FONT, 0).unwrap();
+    // Set the variation for normal font weight
+    face.set_variations(&[weight.rustybuzz_varitation()]);
     
     // Create and populate the text buffer
     let mut buffer = rustybuzz::UnicodeBuffer::new();
@@ -38,8 +64,10 @@ pub fn text_width(text: &str, font_size: f32) -> f32 {
 }
 
 // Get the height of the default font using rustybuzz parser
-pub fn text_height(font_size: f32) -> f32 {
-    let face = ttf_parser::Face::parse(DEFAULT_FONT, 0).unwrap();
+pub fn text_height(font_size: f32, weight: &FontWeight) -> f32 {
+    let mut face = rustybuzz::Face::from_slice(DEFAULT_FONT, 0).unwrap();
+    // Set the variation for normal font weight
+    face.set_variations(&[weight.rustybuzz_varitation()]);
 
     let units_per_em = face.units_per_em() as f32;
     let scale = font_size / units_per_em;
@@ -49,8 +77,10 @@ pub fn text_height(font_size: f32) -> f32 {
 
 
 // Get the em size for default font at given size using rustybuzz parser
-pub fn em_size(font_size: f32) -> f32 {
-    let face = ttf_parser::Face::parse(DEFAULT_FONT, 0).unwrap();
+pub fn em_size(font_size: f32, weight: &FontWeight) -> f32 {
+    let mut face = rustybuzz::Face::from_slice(DEFAULT_FONT, 0).unwrap();
+    // Set the variation for normal font weight
+    face.set_variations(&[weight.rustybuzz_varitation()]);
 
     let units_per_em = face.units_per_em() as f32;
     let scale = font_size / units_per_em;
@@ -60,7 +90,7 @@ pub fn em_size(font_size: f32) -> f32 {
 
 
 // Take an input string and split it into lines given a max allowable line width
-pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -> Option<Vec<String>> {
+pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, weight: &FontWeight, max_width: f32) -> Option<Vec<String>> {
     // Make sure the string is not empty
     if text.as_ref().is_empty() {return None}
 
@@ -68,13 +98,13 @@ pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -
     let mut output: Vec<String> = Vec::new();
 
     // Width of a space character - will use a lot later
-    let space_width: f32 = text_width(" ", font_size);
+    let space_width: f32 = text_width(" ", font_size, weight);
     
     // Loop through the input text
     // First split at the line breaks
     for line in text.as_ref().lines() {
         // Width of the line
-        let line_width: f32 = text_width(line, font_size);
+        let line_width: f32 = text_width(line, font_size, weight);
 
         // Check if the width of the line will fit in the max width
         if line_width <= max_width {
@@ -92,12 +122,12 @@ pub fn string_to_lines<T: AsRef<str>>(text: T, font_size: f32, max_width: f32) -
             // Start the next line in output with the first word from the iterator
             if let Some(word) = word_iter.next() { output.push(String::from(word)); } else { continue; }
             // Starting width of the line
-            let mut line_width: f32 = text_width(output.last().unwrap(), font_size);
+            let mut line_width: f32 = text_width(output.last().unwrap(), font_size, weight);
 
             // Iterate through the rest of the words
             for word in word_iter {
                 // Length of the individual word
-                let word_width = text_width(word, font_size);
+                let word_width = text_width(word, font_size, weight);
 
                 // Check if we can add a space then this word without exceeding max allowable length
                 if line_width + word_width + space_width <= max_width {

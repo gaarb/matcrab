@@ -18,6 +18,7 @@ pub mod prelude {
     pub use crate::paint::{Color, Dash, Stroke};
     pub use crate::pdf::Document;
     pub use crate::{plot, Config};
+    pub use crate::text::FontWeight;
 }
 
 #[derive(Debug, Clone)]

@@ -7,7 +7,7 @@ use crate::figure::Figure;
 use crate::annotation::{AnnotationElement, HorizontalAlignment, VerticalAlignment, image::{Image, ImageData}};
 use crate::paint::{Color, Dash, Stroke};
 use crate::Config;
-use crate::text::{default_font, string_to_lines, text_height, text_width};
+use crate::text::{default_font, string_to_lines, text_height, text_width, FontWeight};
 
 pub struct Document {
     document: krilla::Document,
@@ -221,8 +221,8 @@ fn draw_tick_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
     // Drawing the labels at each of the axis ticks
     if let Config::On((xmajor, ymajor)) = fig.major_ticks {
         // Amount to offset the text from the axes
-        let h_buffer: f32 = text_width("n", fig.tick_label_font_size);
-        let v_buffer: f32 = text_height(fig.tick_label_font_size) + h_buffer;
+        let h_buffer: f32 = text_width("n", fig.tick_label_font_size, &FontWeight::Normal);
+        let v_buffer: f32 = text_height(fig.tick_label_font_size, &FontWeight::Normal) + h_buffer;
         // Scaling for axis coordinates to pdf coordinates
         let x_scale = fig.ax_size.0/(xmax - xmin);
         let y_scale = fig.ax_size.1/(ymax - ymin);
@@ -241,10 +241,10 @@ fn draw_tick_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
             // Draw the text
             surface.draw_text(
                 krilla::geom::Point::from_xy(
-                    pdf_x(x) - text_width(&label, fig.tick_label_font_size)/2.,
+                    pdf_x(x) - text_width(&label, fig.tick_label_font_size, &FontWeight::Normal)/2.,
                     fig.ax_position.1 + fig.ax_size.1 + v_buffer
                 ),
-                default_font(),
+                default_font(&FontWeight::Normal),
                 fig.tick_label_font_size,
                 &label,
                 false,
@@ -260,10 +260,10 @@ fn draw_tick_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
             // Draw the text
             surface.draw_text(
                 krilla::geom::Point::from_xy(
-                    fig.ax_position.0 - text_width(&label, fig.tick_label_font_size) - h_buffer,
-                    pdf_y(y) + text_height(fig.tick_label_font_size)/2.
+                    fig.ax_position.0 - text_width(&label, fig.tick_label_font_size, &FontWeight::Normal) - h_buffer,
+                    pdf_y(y) + text_height(fig.tick_label_font_size, &FontWeight::Normal)/2.
                 ),
-                default_font(),
+                default_font(&FontWeight::Normal),
                 fig.tick_label_font_size,
                 &label,
                 false,
@@ -283,11 +283,11 @@ fn draw_axis_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
     // x-axis
     if let Some(label) = &fig.xlabel {
         // Width and height of the label
-        let label_width = text_width(label, fig.axis_label_font_size);
-        let label_height = text_height(fig.axis_label_font_size);
+        let label_width = text_width(label, fig.axis_label_font_size, &FontWeight::Normal);
+        let label_height = text_height(fig.axis_label_font_size, &FontWeight::Normal);
         // Location of the label, 0.05x figure height off of the bottom, center of the axis
         let x = fig.ax_position.0 + 0.5*fig.ax_size.0 - 0.5*label_width;
-        let y = fig.ax_position.1 + fig.ax_size.1 + fig.tick_label_font_size + 2.*text_width("n", fig.tick_label_font_size) + label_height;
+        let y = fig.ax_position.1 + fig.ax_size.1 + fig.tick_label_font_size + 2.*text_width("n", fig.tick_label_font_size, &FontWeight::Normal) + label_height;
 
         // Set the color and fill
         surface.set_fill(Color::BLACK.into());
@@ -295,7 +295,7 @@ fn draw_axis_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
         // Draw the text
         surface.draw_text(
             krilla::geom::Point::from_xy(x, y),
-            default_font(),
+            default_font(&FontWeight::Normal),
             fig.axis_label_font_size,
             &label,
             false,
@@ -305,10 +305,10 @@ fn draw_axis_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
     // y-axis
     if let Some(label) = &fig.ylabel {
         // Width and height of the label
-        let label_width = text_width(label, fig.axis_label_font_size);
+        let label_width = text_width(label, fig.axis_label_font_size, &FontWeight::Normal);
         // Location of the label, 0.05x figure height off of the bottom, center of the axis
         let offset = match fig.major_ticks {
-            Config::On((.., ymajor)) => text_width(&format!("{:.1$}n", (ymin/ymajor).ceil(), fig.num_decimals.1+2), fig.tick_label_font_size),
+            Config::On((.., ymajor)) => text_width(&format!("{:.1$}n", (ymin/ymajor).ceil(), fig.num_decimals.1+2), fig.tick_label_font_size, &FontWeight::Normal),
             _ => 0.
         };
         let x = fig.ax_position.0 - offset;
@@ -322,7 +322,7 @@ fn draw_axis_labels(surface: &mut krilla::surface::Surface, fig: &Figure) {
         // Draw the text
         surface.draw_text(
             krilla::geom::Point::from_xy(-y, x),
-            default_font(),
+            default_font(&FontWeight::Normal),
             fig.axis_label_font_size,
             &label,
             false,
@@ -343,7 +343,7 @@ fn draw_title(surface: &mut krilla::surface::Surface, fig: &Figure) {
         if title.len() == 0 {return}
         // Height of the title
         // The first line gets font height as height allowance, and the rest get 1.3*font_size
-        let font_line_height = text_height(fig.title_font_size);
+        let font_line_height = text_height(fig.title_font_size, &FontWeight::Normal);
         let title_height = font_line_height + 1.3*fig.title_font_size*((title.len() - 1) as f32);
         
         // Set the stroke and fill
@@ -354,11 +354,11 @@ fn draw_title(surface: &mut krilla::surface::Surface, fig: &Figure) {
         // Loop through the lines in title
         for line in title {
             // x coordinate to draw the line at
-            let x = 0.5*(fig.fig_size.0 - text_width(&line, fig.title_font_size));
+            let x = 0.5*(fig.fig_size.0 - text_width(&line, fig.title_font_size, &FontWeight::Normal));
             // Write the line
             surface.draw_text(
                 krilla::geom::Point::from_xy(x, y),
-                default_font(),
+                default_font(&FontWeight::Normal),
                 fig.title_font_size,
                 &line,
                 false,
@@ -391,7 +391,7 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
                 // If series has a label
                 if let Some(label) = &series.label {
                     // Pick what is largest between running max and the label of the current series
-                    max_width = max_width.max(text_width(label, legend_font_size));
+                    max_width = max_width.max(text_width(label, legend_font_size, &FontWeight::Normal));
                 }
             }
             max_width
@@ -413,7 +413,7 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
         
         // Find the spacing and starting height for the legend entries based on the bounding box height
         let num_entries: usize = fig.data.iter().filter(|s| s.label.is_some()).count();
-        let text_height = text_height(legend_font_size);
+        let text_height = text_height(legend_font_size, &FontWeight::Normal);
         let step: f32 = (bottom - top + text_height) / (num_entries as f32 + 1.);
 
         // Loop through the series
@@ -439,7 +439,7 @@ fn draw_legend(surface: &mut krilla::surface::Surface, fig: &Figure) {
             surface.set_fill(Color::BLACK.into());
             surface.draw_text(
                 krilla::geom::Point::from_xy(x + 20.5, y), 
-                default_font(), 
+                default_font(&FontWeight::Normal), 
                 legend_font_size, 
                 &series.label.clone().unwrap(), 
                 false, 
@@ -549,7 +549,7 @@ fn draw_annotation_elements(surface: &mut krilla::surface::Surface, fig: Figure)
                 surface.draw_path(&path.finish().unwrap());
             }
 
-            AnnotationElement::Text { x, y, text, font_size, font_color } => {
+            AnnotationElement::Text { x, y, text, font_size, font_color , font_weight} => {
                 // Set the stroke and fill
                 surface.set_stroke(None);
                 surface.set_fill(font_color.into());
@@ -557,7 +557,7 @@ fn draw_annotation_elements(surface: &mut krilla::surface::Surface, fig: Figure)
                 // Draw the text
                 surface.draw_text(
                     krilla::geom::Point::from_xy(x, y),
-                    default_font(),
+                    default_font(&font_weight),
                     font_size,
                     &text,
                     false,

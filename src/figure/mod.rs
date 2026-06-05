@@ -1,4 +1,4 @@
-use crate::text::{text_height, text_width};
+use crate::text::{text_height, text_width, FontWeight};
 use crate::{Config, ToF32};
 use crate::paint::{Color, Dash, Stroke, StrokePalette};
 use crate::annotation::{self, Annotation, AnnotationElement};
@@ -123,7 +123,7 @@ impl Figure {
     // Guarantees right > left and bottom > top
     pub fn ax_position_ltrb(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         let (left, right) = (left.min(right), right.max(left));
-        let (top, bottom) = (top.min(bottom), bottom.min(top));
+        let (top, bottom) = (top.min(bottom), bottom.max(top));
         self.ax_size = (right - left, bottom - top);
         self.ax_position = (left, top);
     }
@@ -283,7 +283,7 @@ impl Figure {
             let mut max_label_width: f32 = 0.;
             for series in &self.data {
                 if let Some(label) = &series.label {
-                    let width = text_width(label, self.legend_font_size);
+                    let width = text_width(label, self.legend_font_size, &FontWeight::Normal);
                     max_label_width = max_label_width.max(width);
                     num_legend_entries += 1;
                 }
@@ -293,7 +293,7 @@ impl Figure {
             let legend_width = 52.5 + max_label_width;
             // Height of the legend
             // 1.5*legend_font_size*num_legend_entries + gap between top of legend and first line (for symmetric padding on bottom)
-            let legend_height = 1.5*self.legend_font_size*(num_legend_entries as f32 + 1.) - text_height(self.legend_font_size);
+            let legend_height = 1.5*self.legend_font_size*(num_legend_entries as f32 + 1.) - text_height(self.legend_font_size, &FontWeight::Normal);
 
             // Check for the best location to place the legend
             // Upper-right
